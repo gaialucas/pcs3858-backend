@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  mqtt_broker:
+    image: "eclipse-mosquitto:latest"
+    container_name: mosquitto
+    networks:
+      - smartrash-net
+    restart: always
+    ports:
+      - "1883:1883"
+    volumes:
+      - mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  db_listener:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-listener
+    container_name: mqtt_listener
+    restart: always
+    networks:
+      - smartrash-net
+    ports:
+    - "8080:8080"
+    volumes:
+      - .:/usr/app
+    links:
+      - database_rentalx
+    depends_on:
+      - database_rentalx
+
+  influxdb:
+    image: influxdb:2.4.0
+    container_name: sensor_db
+    restart: always
+    networks:
+      - smartrash-net
+    expose:
+      - "8086"
+    volumes:
+      - ./influxdbconfig:/var/lib/influxdb2
+
+volumes:
+  smartrash-net:
+    driver: bridge
