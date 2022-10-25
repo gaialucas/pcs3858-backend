@@ -10,7 +10,7 @@ services:
     ports:
       - "1883:1883"
     volumes:
-      - mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
 
   db_listener:
     build:
@@ -24,10 +24,6 @@ services:
     - "8080:8080"
     volumes:
       - .:/usr/app
-    links:
-      - database_rentalx
-    depends_on:
-      - database_rentalx
 
   influxdb:
     image: influxdb:2.4.0
@@ -37,8 +33,6 @@ services:
       - smartrash-net
     expose:
       - "8086"
-    volumes:
-      - ./influxdbconfig:/var/lib/influxdb2
 
 volumes:
   smartrash-net:
