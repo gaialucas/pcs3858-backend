@@ -14,9 +14,11 @@ services:
 
   db_listener:
     build:
-      context: .
+      context: ./mqtt-listener
       dockerfile: ./Dockerfile-listener
     container_name: mqtt_listener
+    depends_on:
+      - mqtt_broker
     restart: always
     networks:
       - smartrash-net
@@ -34,6 +36,6 @@ services:
     expose:
       - "8086"
 
-volumes:
+networks:
   smartrash-net:
     driver: bridge
