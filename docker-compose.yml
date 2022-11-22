@@ -28,7 +28,7 @@ services:
       - .:/usr/app
 
   influxdb:
-    image: influxdb:2.4.0
+    image: postgres:15-bullseye
     container_name: sensor_db
     restart: always
     networks:
