@@ -27,9 +27,11 @@ services:
     volumes:
       - .:/usr/app
 
-  influxdb:
+  postgres:
     image: postgres:15-bullseye
     container_name: sensor_db
+    environment:
+      POSTGRES_PASSWORD: admin
     restart: always
     networks:
       - smartrash-net
