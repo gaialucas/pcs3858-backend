@@ -19,11 +19,11 @@ services:
     container_name: mqtt_listener
     depends_on:
       - mqtt_broker
-    restart: always
+    # restart: always
     networks:
       - smartrash-net
-    ports:
-    - "8080:8080"
+    # ports:
+    # - "8080:8080"
     volumes:
       - .:/usr/app
 
@@ -36,7 +36,15 @@ services:
     networks:
       - smartrash-net
     expose:
-      - "8086"
+      - "5432"
+
+  adminer:
+    image: adminer
+    restart: always
+    networks:
+      - smartrash-net
+    ports:
+      - 8080:8080
 
 networks:
   smartrash-net:
