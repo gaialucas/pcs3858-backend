@@ -10,6 +10,9 @@ measures but always only one id. The message is sent as a raw string, with field
 separated by whitespaces.
 """
 import paho.mqtt.client as mqtt_client
+import psycopg2
+from configparser import ConfigParser
+
 from datetime import datetime
 import sys
 
@@ -54,7 +57,35 @@ def subscribe(client: mqtt_client):
     client.on_message = on_message
 
 
+def read_postgres_cfg(filename='database.ini', section='postgresql'):
+    """Read PostgreSQL parameters from ini file."""
+    # create a parser
+    parser = ConfigParser()
+    # read config file
+    parser.read(filename)
+
+    # get section, default to postgresql
+    db = {}
+    if parser.has_section(section):
+        params = parser.items(section)
+        for param in params:
+            db[param[0]] = param[1]
+    else:
+        raise Exception(f'Section {section} not found in the {filename} file')
+
+    return db
+
+
+def connect_postgres(): # -> psycopg2.
+    """Connect to PostgreSQL instance."""
+    dbcfg = read_postgres_cfg()
+    print(f"DB URL: {dbcfg['host']}")
+    sys.stdout.flush()
+    psycopg2.connect(**dbcfg)
+
+
 def run():
+    postgre_client = connect_postgres()
     client = connect_mqtt()
     subscribe(client)
     client.loop_forever()
