@@ -9,6 +9,7 @@ or wieght measure from the trashcan. An id may have multiple height or weight
 measures but always only one id. The message is sent as a raw string, with fields
 separated by whitespaces.
 """
+from time import sleep
 import paho.mqtt.client as mqtt_client
 import psycopg2
 from configparser import ConfigParser
@@ -47,6 +48,11 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
+        global id_meas
+        global id_trash
+        global weight
+        global height
+
         t_received = datetime.now()
         print(f"{t_received}: Received `{msg.payload.decode()}` from `{msg.topic}` topic")
         msg_dict = {}
@@ -59,10 +65,12 @@ def subscribe(client: mqtt_client):
 
         # save to DB ->
         cur = db_conn.cursor()
-        weight += random.random()
-        height += random.random()
-        cur.execute(f"INSERT INTO smartrash.measures VALUES ({id_meas}, {weight}, {height}, {datetime.now().seconds()}, {id_trash});")
+        weight = weight + random.random()
+        height = height + random.random()
+        cur.execute(f"INSERT INTO smartrash.measures VALUES ({id_meas}, {weight}, {height}, TIMESTAMP \'{datetime.now()}\', {id_trash});")
         id_meas += 1
+        db_conn.commit()
+        cur.close()
 
     client.subscribe(topic)
     client.on_message = on_message
@@ -96,6 +104,7 @@ def connect_postgres(): # -> psycopg2.
 
 
 def run():
+    global db_conn
     db_conn = connect_postgres()
     client = connect_mqtt()
     subscribe(client)
