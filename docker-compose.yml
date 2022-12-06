@@ -35,6 +35,8 @@ services:
     restart: always
     networks:
       - smartrash-net
+    expose:
+      - 5432
     ports:
       - 5432:5432
 
