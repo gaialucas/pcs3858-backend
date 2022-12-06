@@ -13,6 +13,7 @@ import paho.mqtt.client as mqtt_client
 import psycopg2
 from configparser import ConfigParser
 
+import random
 from datetime import datetime
 import sys
 
@@ -24,7 +25,11 @@ topic = "pcs3858/smartrash/#"
 client_id = f'python-mqtt-99'
 # username = 'emqx'
 # password = 'public'
-
+db_conn = None
+weight = 0.0
+height = 0.0
+id_meas = 7
+id_trash = 1
 
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -51,7 +56,13 @@ def subscribe(client: mqtt_client):
         print(msg_dict.items())
         sys.stdout.flush()
         client.publish('pcs3858/acks', 'OK')
+
         # save to DB ->
+        cur = db_conn.cursor()
+        weight += random.random()
+        height += random.random()
+        cur.execute(f"INSERT INTO smartrash.measures VALUES ({id_meas}, {weight}, {height}, {datetime.now().seconds()}, {id_trash});")
+        id_meas += 1
 
     client.subscribe(topic)
     client.on_message = on_message
@@ -81,11 +92,11 @@ def connect_postgres(): # -> psycopg2.
     dbcfg = read_postgres_cfg()
     print(f"DB URL: {dbcfg['host']}")
     sys.stdout.flush()
-    psycopg2.connect(**dbcfg)
+    return psycopg2.connect(**dbcfg)
 
 
 def run():
-    postgre_client = connect_postgres()
+    db_conn = connect_postgres()
     client = connect_mqtt()
     subscribe(client)
     client.loop_forever()
