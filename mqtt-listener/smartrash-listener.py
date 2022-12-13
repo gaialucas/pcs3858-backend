@@ -79,7 +79,7 @@ def subscribe(client: mqtt_client):
 
         # save to DB ->
         cur = db_conn.cursor()
-        query = "INSERT INTO smartrash.measures (weight, height, timestamp, trash_id) VALUES (%s, %s, TIMESTAMP \'%s\', %s)"
+        query = "INSERT INTO smartrash.measures (weight, height, timestamp, trash_id) VALUES (%s, %s, TIMESTAMP %s, %s)"
         cur.execute(query, (weight, height, timestamp, trash_id))
         db_conn.commit()
         cur.close()
