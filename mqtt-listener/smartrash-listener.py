@@ -18,7 +18,6 @@ import random
 from datetime import datetime
 import sys
 
-# broker = '0.0.0.0'
 broker = 'mosquitto'
 port = 1883
 topic = "pcs3858/smartrash/#"
@@ -27,17 +26,15 @@ client_id = f'python-mqtt-99'
 # username = 'emqx'
 # password = 'public'
 db_conn = None
-weight = 0.0
-height = 0.0
-id_meas = 7
-id_trash = 1
 
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
+            sys.stdout.flush()
         else:
             print("Failed to connect, return code %d\n", rc)
+            sys.stdout.flush()
 
     client = mqtt_client.Client(client_id)
     # client.username_pw_set(username, password)
@@ -48,27 +45,42 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        global id_meas
-        global id_trash
-        global weight
-        global height
-
         t_received = datetime.now()
         print(f"{t_received}: Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+        sys.stdout.flush()
         msg_dict = {}
-        for field_value_tuple in msg.payload.decode().split():
-            k,v = field_value_tuple.split('=')
-            msg_dict.update({k: v})
+
+        try:
+            for field_value_tuple in msg.payload.decode().split():
+                k,v = field_value_tuple.split('=')
+                msg_dict.update({k: v})
+        except Exception as e:
+            # Skip msg if empty
+            print(e)
+            sys.stdout.flush()
+            return
+
         print(msg_dict.items())
+        trash_id = msg_dict.get('trash_id', None)
+        weight = msg_dict.get('weight', None)
+        height = msg_dict.get('height', None)
+        timestamp = msg_dict.get('ts', None)
+        if timestamp is None:
+            timestamp = datetime.now()
+            print('Timestamp from listener')
+            sys.stdout.flush()
+        else:
+            timestamp = datetime.fromtimestamp(int(timestamp))
+            print(f'Timestamp from message: {timestamp.timestamp()} => {timestamp}')
+            sys.stdout.flush()
+
         sys.stdout.flush()
         client.publish('pcs3858/acks', 'OK')
 
         # save to DB ->
         cur = db_conn.cursor()
-        weight = weight + random.random()
-        height = height + random.random()
-        cur.execute(f"INSERT INTO smartrash.measures VALUES ({id_meas}, {weight}, {height}, TIMESTAMP \'{datetime.now()}\', {id_trash});")
-        id_meas += 1
+        query = "INSERT INTO smartrash.measures (weight, height, timestamp, trash_id) VALUES (%s, %s, TIMESTAMP \'%s\', %s)"
+        cur.execute(query, (weight, height, timestamp, trash_id))
         db_conn.commit()
         cur.close()
 
